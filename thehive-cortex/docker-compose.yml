@@ -1,0 +1,64 @@
+version: "3"
+services:
+  # 1. Base de données pour TheHive
+  cassandra:
+    image: 'cassandra:4'
+    container_name: cassandra
+    restart: unless-stopped
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TheHive
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=128M
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+  # 2. Moteur de recherche pour Cortex
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    container_name: elasticsearch-cortex
+    restart: unless-stopped
+    environment:
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  # 3. TheHive (Gestion des Incidents)
+  thehive:
+    image: 'thehiveproject/thehive:5.2.5-1'
+    container_name: thehive
+    restart: unless-stopped
+    depends_on:
+      - cassandra
+    ports:
+      - "9000:9000"
+    environment:
+      - JVM_OPTS="-Xms1024m -Xmx1024m"
+    command:
+      - --cql-hostnames
+      - cassandra
+    volumes:
+      - thehive_data:/etc/thehive
+
+  # 4. Cortex (Analyseurs)
+  cortex:
+    image: 'thehiveproject/cortex:3.1.7-1'
+    container_name: cortex
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    ports:
+      - "9001:9001"
+    environment:
+      - JOB_DIRECTORY=/tmp/cortex-jobs
+    volumes:
+      - cortex_data:/var/run/docker.sock
+      - /tmp/cortex-jobs:/tmp/cortex-jobs
+
+volumes:
+  cassandra_data:
+  elasticsearch_data:
+  thehive_data:
+  cortex_data:
