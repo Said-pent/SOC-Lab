@@ -1,6 +1,6 @@
 version: "3"
 services:
-  # 1. Base de données pour TheHive
+  # 1. Base de données (Cassandra)
   cassandra:
     image: 'cassandra:4'
     container_name: cassandra
@@ -14,7 +14,7 @@ services:
     volumes:
       - cassandra_data:/var/lib/cassandra
 
-  # 2. Moteur de recherche pour Cortex
+  # 2. Moteur de recherche (Elasticsearch pour Cortex)
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
     container_name: elasticsearch-cortex
@@ -25,9 +25,9 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
 
-  # 3. TheHive (Gestion des Incidents)
+  # 3. TheHive 5 (Image corrigée : strangebee)
   thehive:
-    image: 'thehiveproject/thehive:5.2.5-1'
+    image: 'strangebee/thehive:5.2.6-1'
     container_name: thehive
     restart: unless-stopped
     depends_on:
@@ -42,7 +42,7 @@ services:
     volumes:
       - thehive_data:/etc/thehive
 
-  # 4. Cortex (Analyseurs)
+  # 4. Cortex
   cortex:
     image: 'thehiveproject/cortex:3.1.7-1'
     container_name: cortex
